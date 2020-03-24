@@ -84,7 +84,7 @@ ui <- navbarPage(
                 value = c(mindate, maxdate))),
             column(2, radioButtons("scale", label = "Free or Fixed Y-Axis?", 
                                    choices = c("free", "fixed"),
-                                   selected = "fixed"))
+                                   selected = "free"))
             ),
         tabsetPanel(
             tabPanel("Trend Plot", plotOutput("plt")),
@@ -107,18 +107,18 @@ server <- function(input, output) {
                    date >= input$dtrange[1],
                    date <= input$dtrange[2],
                    dx_measure %in% input$trnds)
-        notedf <- pltdf %>% 
-            group_by(state, dx_measure) %>% 
-            arrange(state, dx_measure, desc(date)) %>%
-            slice(1) %>% 
-            ungroup() %>% 
-            mutate(ypos = cases_clean + .25*max(cases_clean))
+        # notedf <- pltdf %>% 
+        #     group_by(state, dx_measure) %>% 
+        #     arrange(state, dx_measure, desc(date)) %>%
+        #     slice(1) %>% 
+        #     ungroup() %>% 
+        #     mutate(ypos = cases_clean + .25*max(cases_clean))
         ggplot(pltdf, aes(x = date, y = cases_clean, color = dx_measure, group = dx_measure)) + 
             geom_smooth(se = FALSE) + 
             geom_point(size = 2) + 
-            geom_text(data = notedf, inherit.aes = TRUE, 
-                      aes(y = ypos, label = cases_clean), 
-                      position = position_dodge(0.9), fontface = "bold") + 
+            # geom_text(data = notedf, inherit.aes = TRUE, 
+            #           aes(y = ypos, label = cases_clean), 
+            #           position = position_dodge(0.9), fontface = "bold") + 
             facet_grid(state ~ ., scales = input$scale) + 
             theme_dark(base_size = 14) + 
             theme(text = element_text(colour = "gray80"),
