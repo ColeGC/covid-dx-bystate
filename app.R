@@ -3,7 +3,6 @@ library(shinythemes)
 library(dplyr)
 library(ggplot2)
 
-
 covidpull <- jsonlite::read_json(path = 'https://covidtracking.com/api/states/daily')
 clean_cov <- function(x) {
     whichnull <- unlist(lapply(x, is.null))
@@ -56,20 +55,20 @@ alltrends <- unique(covid19$dx_measure)
 
 # Define UI for application that draws a histogram
 ui <- navbarPage(
-    "COVID Testing and Results by State",
+    "COVID Trends by State",
     theme = shinytheme("cyborg"),
     tabPanel(
-        "Data and Plot Selections",
+        "State Trends",
         fluidRow(
             column(4, selectInput(
                 "states",
-                "States to Plot:",
+                "Specify States to Plot:",
                 choices = allstates, 
                 selected = c("IA", "SC", "FL", "VA"), 
                 multiple = TRUE)),
             column(6, selectInput(
                 "trnds",
-                "Trends to Plot:",
+                "Select Trends to Plot:",
                 choices = alltrends, 
                 selected = c("tested_negative", "tested_positive", "deaths"), 
                 multiple = TRUE)),
@@ -78,9 +77,13 @@ ui <- navbarPage(
                                    selected = "fixed")),
             tabsetPanel(
                 tabPanel("Trend Plot", plotOutput("plt")),
-                tabPanel("Data Documentation", tableOutput("srctbl"))
-            )
+                tabPanel("Data Documentation", tableOutput("srctbl")),
+                selected = "Trend Plot"),
         )
+    ),
+    tabPanel(
+    "About",
+    includeMarkdown("appinfo.rmd")
     )
 )
 
@@ -94,7 +97,7 @@ server <- function(input, output) {
             geom_smooth(se = FALSE) + 
             geom_point(size = 2) + 
             facet_grid(state ~ ., scales = input$scale) + 
-            theme_dark(base_size = 12) + 
+            theme_dark(base_size = 14) + 
             theme(text = element_text(colour = "gray80"),
                   rect = element_rect(fill = "black", colour = "gray60")) + 
             labs(title = "Reported COVID-19 Cases by Selected State, Time",
