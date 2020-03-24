@@ -16,7 +16,7 @@ covid19 <- do.call("rbind", covid19_1) %>%
     rename(tested_total = total, tested_positive = positive, tested_negative = negative,
            tested_pending = pending, deaths = death) %>% 
     tidyr::gather(key = "dx_measure", value = "cases", 
-                  tested_total, tested_positive, tested_negative, deaths, tested_pending) %>% 
+                  tested_total, tested_positive, tested_negative, deaths, tested_pending, hospitalized) %>% 
     mutate(cases = as.numeric(cases)) %>% 
     mutate(cases_clean = replace(cases, is.na(cases), 0))
 
@@ -52,6 +52,8 @@ allstates <- covid19 %>%
     unlist() %>% 
     unique()
 alltrends <- unique(covid19$dx_measure)
+mindate <- min(covid19$date)
+maxdate <- max(covid19$date)
 
 # Define UI for application that draws a histogram
 ui <- navbarPage(
@@ -66,24 +68,34 @@ ui <- navbarPage(
                 choices = allstates, 
                 selected = c("IA", "SC", "FL", "VA"), 
                 multiple = TRUE)),
-            column(6, selectInput(
+            column(4, selectInput(
                 "trnds",
-                "Select Trends to Plot:",
+                "Specify Trends to Plot:",
                 choices = alltrends, 
                 selected = c("tested_negative", "tested_positive", "deaths"), 
-                multiple = TRUE)),
+                multiple = TRUE))
+            ),
+        fluidRow(
+            column(4, sliderInput(
+                "dtrange", 
+                "Specify Date Range:", 
+                min = mindate,
+                max = maxdate,
+                value = c(mindate, maxdate))),
             column(2, radioButtons("scale", label = "Free or Fixed Y-Axis?", 
                                    choices = c("free", "fixed"),
-                                   selected = "fixed")),
-            tabsetPanel(
-                tabPanel("Trend Plot", plotOutput("plt")),
-                tabPanel("Data Documentation", tableOutput("srctbl")),
-                selected = "Trend Plot"),
+                                   selected = "fixed"))
+            ),
+        tabsetPanel(
+            tabPanel("Trend Plot", plotOutput("plt")),
+            tabPanel("Data Table", tableOutput("dtatbl")),
+            tabPanel("Data Documentation", tableOutput("srctbl")),
+            selected = "Trend Plot"
         )
     ),
     tabPanel(
-    "About",
-    includeMarkdown("appinfo.Rmd")
+        "About",
+        includeMarkdown("appinfo.Rmd")
     )
 )
 
@@ -92,10 +104,21 @@ server <- function(input, output) {
     output$plt <- renderPlot({
         pltdf <- covid19 %>% 
             filter(state %in% input$states,
+                   date >= input$dtrange[1],
+                   date <= input$dtrange[2],
                    dx_measure %in% input$trnds)
+        notedf <- pltdf %>% 
+            group_by(state, dx_measure) %>% 
+            arrange(state, dx_measure, desc(date)) %>%
+            slice(1) %>% 
+            ungroup() %>% 
+            mutate(ypos = cases_clean + .25*max(cases_clean))
         ggplot(pltdf, aes(x = date, y = cases_clean, color = dx_measure, group = dx_measure)) + 
             geom_smooth(se = FALSE) + 
             geom_point(size = 2) + 
+            geom_text(data = notedf, inherit.aes = TRUE, 
+                      aes(y = ypos, label = cases_clean), 
+                      position = position_dodge(0.9), fontface = "bold") + 
             facet_grid(state ~ ., scales = input$scale) + 
             theme_dark(base_size = 14) + 
             theme(text = element_text(colour = "gray80"),
@@ -104,6 +127,19 @@ server <- function(input, output) {
                  caption = paste0("Data from the COVID Tracking Project: https://covidtracking.com", 
                                   "\nSee documentation for important context about state-specific data collection"),
                  color = "Diagnosis Measure")
+    })
+    output$dtatbl <- renderTable({
+        covid19 %>% 
+            filter(state %in% input$states,
+                   date >= input$dtrange[1],
+                   date <= input$dtrange[2]) %>% 
+            select(state, date, dx_measure, cases_clean) %>% 
+            group_by(state, date) %>% 
+            tidyr::spread(key = dx_measure, value = cases_clean) %>% 
+            ungroup() %>% 
+            arrange(state, desc(date)) %>% 
+            mutate(date = as.character(date)) %>% 
+            select(state, date, one_of("tested_total", "tested_negative", "tested_positive", "hospitalized", "deaths"))
     })
     output$srctbl <- renderTable(bordered = TRUE, striped = TRUE, rownames = FALSE, colnames = TRUE, {
         src_tbl %>% 
