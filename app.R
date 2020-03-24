@@ -83,7 +83,7 @@ ui <- navbarPage(
     ),
     tabPanel(
     "About",
-    includeMarkdown("appinfo.rmd")
+    includeMarkdown("appinfo.Rmd")
     )
 )
 
