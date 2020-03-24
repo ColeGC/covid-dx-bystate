@@ -1,0 +1,14 @@
+---
+title: "About"
+output: html_document
+---
+
+## Project
+
+Project in progress on [GitHub](https://github.com/ColeGC/covid-dx-bystate.git)
+
+## Data
+
+All data for this project comes from the [COVID Tracking Project](https://covidtracking.com).
+
+Please see source documentation for further information about the data and their API.
