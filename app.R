@@ -1,9 +1,10 @@
 library(shiny)
-library(jsonlite)
+library(shinythemes)
 library(dplyr)
 library(ggplot2)
 
-covidpull <- read_json(path = 'https://covidtracking.com/api/states/daily')
+
+covidpull <- jsonlite::read_json(path = 'https://covidtracking.com/api/states/daily')
 clean_cov <- function(x) {
     whichnull <- unlist(lapply(x, is.null))
     x[whichnull] <- NA
@@ -54,33 +55,31 @@ allstates <- covid19 %>%
 alltrends <- unique(covid19$dx_measure)
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(
-
-    # Application title
-    titlePanel("COVID Testing and Results by State"),
-
-    # Sidebar with a slider input for number of bins
-    verticalLayout(
-        sidebarPanel(width = 8, 
-            selectInput("states",
-                        "States to Plot:",
-                        choices = allstates, 
-                        selected = c("IA", "SC", "FL", "VA"), 
-                        multiple = TRUE),
-            selectInput("trnds",
-                        "Trends to Plot:",
-                        choices = alltrends, 
-                        selected = c("tested_negative", "tested_positive", "deaths"), 
-                        multiple = TRUE),
-            radioButtons("scale", label = "Free or Fixed Y-Axis?", 
-                         choices = c("free", "fixed"),
-                         selected = "fixed")
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-            plotOutput("plt"),
-            tableOutput("srctbl")
+ui <- navbarPage(
+    "COVID Testing and Results by State",
+    theme = shinytheme("cyborg"),
+    tabPanel(
+        "Data and Plot Selections",
+        fluidRow(
+            column(4, selectInput(
+                "states",
+                "States to Plot:",
+                choices = allstates, 
+                selected = c("IA", "SC", "FL", "VA"), 
+                multiple = TRUE)),
+            column(6, selectInput(
+                "trnds",
+                "Trends to Plot:",
+                choices = alltrends, 
+                selected = c("tested_negative", "tested_positive", "deaths"), 
+                multiple = TRUE)),
+            column(2, radioButtons("scale", label = "Free or Fixed Y-Axis?", 
+                                   choices = c("free", "fixed"),
+                                   selected = "fixed")),
+            tabsetPanel(
+                tabPanel("Trend Plot", plotOutput("plt")),
+                tabPanel("Data Documentation", tableOutput("srctbl"))
+            )
         )
     )
 )
@@ -95,7 +94,9 @@ server <- function(input, output) {
             geom_smooth(se = FALSE) + 
             geom_point(size = 2) + 
             facet_grid(state ~ ., scales = input$scale) + 
-            theme_bw(base_size = 12) + 
+            theme_dark(base_size = 12) + 
+            theme(text = element_text(colour = "gray80"),
+                  rect = element_rect(fill = "black", colour = "gray60")) + 
             labs(title = "Reported COVID-19 Cases by Selected State, Time",
                  caption = paste0("Data from the COVID Tracking Project: https://covidtracking.com", 
                                   "\nSee documentation for important context about state-specific data collection"),
