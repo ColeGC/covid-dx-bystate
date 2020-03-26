@@ -102,12 +102,13 @@ ui <- navbarPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
     output$plt <- renderPlot({
+        dx_order <- c("tested_total", "tested_pending", "tested_negative", "tested_positive", "hospitalized", "deaths")
         pltdf <- covid19 %>% 
             filter(state %in% input$states,
                    date >= input$dtrange[1],
                    date <= input$dtrange[2],
                    dx_measure %in% input$trnds) %>% 
-            mutate(dx_measure = forcats::fct_rev(forcats::as_factor(dx_measure)))
+            mutate(dx_measure = factor(dx_measure, levels = dx_order, labels = dx_order))
         ggplot(pltdf, aes(x = date, y = cases_clean, color = state, group = state)) + 
             geom_smooth(se = FALSE) + 
             geom_point(size = 2) + 
