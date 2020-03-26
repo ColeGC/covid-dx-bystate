@@ -58,7 +58,7 @@ maxdate <- max(covid19$date)
 # Define UI for application that draws a histogram
 ui <- navbarPage(
     "COVID Trends by State",
-    theme = shinytheme("cyborg"),
+    theme = shinytheme("sandstone"),
     tabPanel(
         "State Trends",
         fluidRow(
@@ -72,7 +72,7 @@ ui <- navbarPage(
                 "trnds",
                 "Specify Trends to Plot:",
                 choices = alltrends, 
-                selected = c("tested_negative", "tested_positive", "deaths"), 
+                selected = c("tested_positive", "hospitalized", "deaths"), 
                 multiple = TRUE))
             ),
         fluidRow(
@@ -106,28 +106,19 @@ server <- function(input, output) {
             filter(state %in% input$states,
                    date >= input$dtrange[1],
                    date <= input$dtrange[2],
-                   dx_measure %in% input$trnds)
-        # notedf <- pltdf %>% 
-        #     group_by(state, dx_measure) %>% 
-        #     arrange(state, dx_measure, desc(date)) %>%
-        #     slice(1) %>% 
-        #     ungroup() %>% 
-        #     mutate(ypos = cases_clean + .25*max(cases_clean))
-        ggplot(pltdf, aes(x = date, y = cases_clean, color = dx_measure, group = dx_measure)) + 
+                   dx_measure %in% input$trnds) %>% 
+            mutate(dx_measure = forcats::fct_rev(forcats::as_factor(dx_measure)))
+        ggplot(pltdf, aes(x = date, y = cases_clean, color = state, group = state)) + 
             geom_smooth(se = FALSE) + 
             geom_point(size = 2) + 
-            # geom_text(data = notedf, inherit.aes = TRUE, 
-            #           aes(y = ypos, label = cases_clean), 
-            #           position = position_dodge(0.9), fontface = "bold") + 
-            facet_grid(state ~ ., scales = input$scale) + 
-            theme_dark(base_size = 14) + 
-            theme(text = element_text(colour = "gray80"),
-                  rect = element_rect(fill = "black", colour = "gray60")) + 
+            facet_grid(dx_measure ~ ., scales = input$scale) + 
+            ggthemes::theme_solarized(base_size = 14) + 
+            ggthemes::scale_color_solarized() + 
             labs(title = "Reported COVID-19 Cases by Selected State, Time",
                  caption = paste0("Data from the COVID Tracking Project: https://covidtracking.com", 
                                   "\nSee documentation for important context about state-specific data collection"),
                  color = "Diagnosis Measure")
-    })
+    }, width = "auto", height = "auto")
     output$dtatbl <- renderTable({
         covid19 %>% 
             filter(state %in% input$states,
