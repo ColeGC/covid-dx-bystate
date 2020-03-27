@@ -115,10 +115,10 @@ server <- function(input, output) {
             facet_grid(dx_measure ~ ., scales = input$scale) + 
             ggthemes::theme_solarized(base_size = 14) + 
             ggthemes::scale_color_solarized() + 
-            labs(title = "Reported COVID-19 Cases by Selected State, Time",
+            labs(title = "Trends: COVID-19 Diagnosis Results and Outcomes by State",
                  caption = paste0("Data from the COVID Tracking Project: https://covidtracking.com", 
                                   "\nSee documentation for important context about state-specific data collection"),
-                 color = "Diagnosis Measure")
+                 color = "State")
     }, width = "auto", height = "auto")
     output$dtatbl <- renderTable({
         covid19 %>% 
