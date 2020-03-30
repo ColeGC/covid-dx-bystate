@@ -120,7 +120,7 @@ server <- function(input, output) {
                                   "\nSee documentation for important context about state-specific data collection"),
                  color = "State")
     }, width = "auto", height = "auto")
-    output$dtatbl <- renderTable({
+output$dtatbl <- renderTable(striped = TRUE, {
         covid19 %>% 
             filter(state %in% input$states,
                    date >= input$dtrange[1],
@@ -129,7 +129,7 @@ server <- function(input, output) {
             group_by(state, date) %>% 
             tidyr::spread(key = dx_measure, value = cases_clean) %>% 
             ungroup() %>% 
-            arrange(state, desc(date)) %>% 
+            arrange(desc(date), state) %>% 
             mutate(date = as.character(date)) %>% 
             select(state, date, one_of("tested_total", "tested_negative", "tested_positive", "hospitalized", "deaths"))
     })
